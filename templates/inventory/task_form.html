@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white p-8 rounded shadow">
+    <h1 class="text-3xl font-bold mb-6">Create New Task</h1>
+
+    <form method="post" action="{% url 'create_task' %}">
+        {% csrf_token %}
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Title</label>
+            {{ form.title }}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Description</label>
+            {{ form.description }}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Required Skill (Optional for Auto-Assign)</label>
+            {{ form.required_skill }}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Assign Manually (Or leave blank to Auto-Assign)</label>
+            {{ form.assigned_to }}
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">Deadline</label>
+                {{ form.deadline }}
+            </div>
+            <div>
+                <label class="block text-gray-700 font-bold mb-2">Workload (Hours)</label>
+                {{ form.workload_hours }}
+            </div>
+        </div>
+
+        <div class="mb-6 p-4 border rounded bg-blue-50">
+            <label class="flex items-center">
+                <input type="checkbox" name="auto_assign" value="1" class="mr-2 h-5 w-5 text-blue-600">
+                <span class="font-bold text-blue-800">Auto-Assign Task</span>
+            </label>
+            <p class="text-sm text-blue-600 mt-1">If checked, the system will find an employee with the Required Skill who has the lowest current workload.</p>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="font-bold text-lg mb-2">Subtasks</h3>
+            <div id="subtasks-container">
+                <div class="mb-2 flex">
+                    <input type="text" name="subtasks" placeholder="Subtask 1" class="border rounded px-3 py-2 w-full">
+                </div>
+                <div class="mb-2 flex">
+                    <input type="text" name="subtasks" placeholder="Subtask 2" class="border rounded px-3 py-2 w-full">
+                </div>
+                <div class="mb-2 flex">
+                    <input type="text" name="subtasks" placeholder="Subtask 3" class="border rounded px-3 py-2 w-full">
+                </div>
+            </div>
+            <button type="button" onclick="addSubtask()" class="text-blue-600 hover:underline text-sm">+ Add another subtask</button>
+        </div>
+
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
+                Create Task
+            </button>
+            <a href="{% url 'admin_dashboard' %}" class="text-gray-600 hover:underline">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    let subtaskCount = 3;
+    function addSubtask() {
+        subtaskCount++;
+        const container = document.getElementById('subtasks-container');
+        const div = document.createElement('div');
+        div.className = 'mb-2 flex';
+        div.innerHTML = '<input type="text" name="subtasks" placeholder="Subtask ' + subtaskCount + '" class="border rounded px-3 py-2 w-full">';
+        container.appendChild(div);
+    }
+    
+    // Add basic Tailwind styling to form inputs
+    document.querySelectorAll('input[type="text"], input[type="number"], select, textarea').forEach(el => {
+        el.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full');
+    });
+    document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
+        el.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full');
+    });
+</script>
+{% endblock %}

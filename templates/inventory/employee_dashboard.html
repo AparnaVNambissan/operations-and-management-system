@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">Employee Dashboard</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Available Assets Table -->
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">Request Assets</h2>
+        <table class="min-w-full table-auto">
+            <thead class="bg-gray-200">
+                <tr>
+                    <th class="px-4 py-2 text-left">Name</th>
+                    <th class="px-4 py-2 text-left">Available</th>
+                    <th class="px-4 py-2 text-left">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in assets %}
+                <tr class="border-b">
+                    <td class="px-4 py-2">{{ asset.name }}</td>
+                    <td class="px-4 py-2 text-green-600 font-bold">{{ asset.available_quantity }}</td>
+                    <td class="px-4 py-2">
+                        {% if asset.available_quantity > 0 %}
+                        <form method="post" action="{% url 'request_asset' asset.id %}" class="flex space-x-2">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" value="1" min="1" max="{{ asset.available_quantity }}" class="border rounded w-16 px-2 py-1">
+                            <button type="submit" class="bg-blue-500 text-white px-2 py-1 rounded">Request</button>
+                        </form>
+                        {% else %}
+                        <span class="text-gray-400">Out of stock</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- My Requests Table -->
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">My Requests</h2>
+        <table class="min-w-full table-auto">
+            <thead class="bg-gray-200">
+                <tr>
+                    <th class="px-4 py-2 text-left">Asset</th>
+                    <th class="px-4 py-2 text-left">Qty</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                    <th class="px-4 py-2 text-left">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in my_requests %}
+                <tr class="border-b">
+                    <td class="px-4 py-2">{{ req.asset.name }}</td>
+                    <td class="px-4 py-2">{{ req.quantity }}</td>
+                    <td class="px-4 py-2 font-bold 
+                        {% if req.status == 'APPROVED' %}text-green-600
+                        {% elif req.status == 'REJECTED' %}text-red-600
+                        {% else %}text-yellow-600{% endif %}">
+                        {{ req.status }}
+                    </td>
+                    <td class="px-4 py-2 text-sm text-gray-500">{{ req.request_date|date:"Y-m-d" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-4 py-2 text-gray-500">No requests made yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tasks & Gamification Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+    <!-- My Tasks Table -->
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">My Tasks & Subtasks</h2>
+        {% for task in my_tasks %}
+        <div class="mb-4 border p-4 rounded {% if task.status == 'COMPLETED' %}bg-green-50{% endif %}">
+            <h3 class="font-bold text-lg">{{ task.title }}</h3>
+            <p class="text-sm text-gray-600 mb-2">Deadline: {{ task.deadline|date:"Y-m-d H:i" }} | Status: <strong>{{ task.status }}</strong></p>
+            <p class="text-sm mb-4">{{ task.description }}</p>
+            
+            <h4 class="font-bold text-md mb-2">Subtasks:</h4>
+            <ul class="list-none space-y-2">
+                {% for subtask in task.subtasks.all %}
+                <li class="flex items-center">
+                    <form method="post" action="{% url 'update_subtask_status' subtask.id %}" class="flex items-center w-full">
+                        {% csrf_token %}
+                        <input type="checkbox" name="is_completed" {% if subtask.is_completed %}checked{% endif %} onChange="this.form.submit()" class="mr-2 h-4 w-4 text-blue-600">
+                        <span class="{% if subtask.is_completed %}line-through text-gray-400{% endif %}">{{ subtask.title }}</span>
+                    </form>
+                </li>
+                {% empty %}
+                <li class="text-gray-500 text-sm">No subtasks for this task.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <p class="text-gray-500">You have no assigned tasks.</p>
+        {% endfor %}
+    </div>
+
+    <!-- My Awards -->
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">My Awards & Badges 🏆</h2>
+        <div class="grid grid-cols-1 gap-4">
+            {% for award in my_awards %}
+            <div class="border border-yellow-400 bg-yellow-50 p-4 rounded text-center shadow-sm">
+                <div class="text-4xl mb-2">⭐</div>
+                <h3 class="font-bold text-yellow-800">{{ award.name }}</h3>
+                <p class="text-sm text-yellow-700 mt-1">{{ award.description }}</p>
+                <p class="text-xs text-yellow-600 mt-2">Awarded on: {{ award.awarded_at|date:"Y-m-d" }}</p>
+            </div>
+            {% empty %}
+            <p class="text-gray-500">You haven't earned any awards yet. Complete tasks on time to earn badges!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 border border-gray-200 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold mb-6">{{ title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="mt-6 flex space-x-4">
+            <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Save Asset</button>
+            <a href="{% url 'admin_dashboard' %}" class="bg-gray-400 text-white py-2 px-4 rounded hover:bg-gray-500">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- Modal for New Category -->
+<div id="categoryModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+        <h3 class="text-lg font-bold mb-4">Add New Category</h3>
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Name</label>
+            <input type="text" id="newCategoryName" class="w-full border rounded px-3 py-2">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Description (Optional)</label>
+            <textarea id="newCategoryDesc" class="w-full border rounded px-3 py-2"></textarea>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+            <button type="button" onclick="saveNewCategory()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Make form inputs look nice since we are using as_p
+    document.querySelectorAll('form input, form select, form textarea').forEach(el => {
+        el.classList.add('w-full', 'border', 'border-gray-300', 'rounded', 'px-3', 'py-2', 'mt-1', 'mb-4');
+    });
+    document.querySelectorAll('form label').forEach(el => {
+        el.classList.add('block', 'font-bold', 'text-gray-700');
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const categorySelect = document.getElementById("id_category");
+        if (categorySelect) {
+            // Add 'Add New' option to the select dropdown
+            const addNewOption = document.createElement("option");
+            addNewOption.value = "add_new";
+            addNewOption.text = "+ Add New Category...";
+            addNewOption.className = "font-bold text-green-600";
+            categorySelect.appendChild(addNewOption);
+
+            categorySelect.addEventListener("change", function(e) {
+                if (e.target.value === "add_new") {
+                    openCategoryModal();
+                    // Temporarily set value to empty to avoid submitting 'add_new' if user cancels
+                    categorySelect.value = ""; 
+                }
+            });
+        }
+    });
+
+    function openCategoryModal() {
+        document.getElementById('categoryModal').classList.remove('hidden');
+        document.getElementById('newCategoryName').focus();
+    }
+
+    function closeCategoryModal() {
+        document.getElementById('categoryModal').classList.add('hidden');
+        document.getElementById('newCategoryName').value = "";
+        document.getElementById('newCategoryDesc').value = "";
+    }
+
+    function saveNewCategory() {
+        const name = document.getElementById('newCategoryName').value;
+        const description = document.getElementById('newCategoryDesc').value;
+        
+        if (!name) {
+            alert("Category name is required!");
+            return;
+        }
+
+        fetch("{% url 'add_category_api' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({name: name, description: description})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.id) {
+                const select = document.getElementById("id_category");
+                const newOption = new Option(data.name, data.id, true, true);
+                
+                // insert before the "+ Add New Category" option
+                const addNewOption = Array.from(select.options).find(opt => opt.value === "add_new");
+                select.insertBefore(newOption, addNewOption);
+                
+                select.value = data.id; // select the newly created option
+                closeCategoryModal();
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Failed to save category. Check your connection.");
+        });
+    }
+</script>
+{% endblock %}

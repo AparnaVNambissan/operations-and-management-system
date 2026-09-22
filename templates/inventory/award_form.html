@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 border border-gray-200 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold mb-6">{{ title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="mt-6 flex space-x-4">
+            <button type="submit" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded hover:bg-yellow-600">Give Award ⭐</button>
+            <a href="{% url 'admin_dashboard' %}" class="bg-gray-400 text-white py-2 px-4 rounded hover:bg-gray-500">Cancel</a>
+        </div>
+    </form>
+</div>
+<script>
+    document.querySelectorAll('form input, form select, form textarea').forEach(el => {
+        el.classList.add('w-full', 'border', 'border-gray-300', 'rounded', 'px-3', 'py-2', 'mt-1', 'mb-4');
+    });
+    document.querySelectorAll('form label').forEach(el => {
+        el.classList.add('block', 'font-bold', 'text-gray-700');
+    });
+</script>
+{% endblock %}
