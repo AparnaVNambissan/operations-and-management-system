@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}Asset Requests & Approvals - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                    REQUISITIONS
+                </span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Asset Requests & Approvals</h1>
+            <p class="text-xs text-slate-500">Track equipment requests, approvals, denials, and inventory return workflows.</p>
+        </div>
+
+        <a href="{% url 'asset_list' %}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition">
+            <i class="fa-solid fa-boxes-stacked mr-1.5"></i>Browse Assets
+        </a>
+    </div>
+
+    <!-- Status Filter Navigation Pills & Search -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-1.5">
+            <a href="{% url 'request_list' %}" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if not selected_status %}bg-slate-900 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                All
+            </a>
+            <a href="{% url 'request_list' %}?status=PENDING" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if selected_status == 'PENDING' %}bg-amber-500 text-white{% else %}bg-amber-50 text-amber-800 hover:bg-amber-100{% endif %}">
+                Pending
+            </a>
+            <a href="{% url 'request_list' %}?status=APPROVED" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if selected_status == 'APPROVED' %}bg-emerald-600 text-white{% else %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100{% endif %}">
+                Approved
+            </a>
+            <a href="{% url 'request_list' %}?status=REJECTED" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if selected_status == 'REJECTED' %}bg-rose-600 text-white{% else %}bg-rose-50 text-rose-800 hover:bg-rose-100{% endif %}">
+                Rejected
+            </a>
+            <a href="{% url 'request_list' %}?status=RETURNED" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if selected_status == 'RETURNED' %}bg-slate-700 text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                Returned
+            </a>
+        </div>
+
+        <form method="get" class="flex items-center space-x-2">
+            {% if selected_status %}
+                <input type="hidden" name="status" value="{{ selected_status }}">
+            {% endif %}
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" name="search" value="{{ search }}" placeholder="Search by asset or user..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-48 sm:w-64">
+            </div>
+            <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                    <tr>
+                        <th class="px-5 py-3.5">ID & Date</th>
+                        <th class="px-5 py-3.5">Employee</th>
+                        <th class="px-5 py-3.5">Asset Details</th>
+                        <th class="px-5 py-3.5 text-center">Qty</th>
+                        <th class="px-5 py-3.5 text-center">Status</th>
+                        <th class="px-5 py-3.5">Notes / Feedback</th>
+                        <th class="px-5 py-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for req in requests %}
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="px-5 py-4">
+                            <span class="font-bold text-slate-900 text-xs">#REQ-{{ req.id }}</span>
+                            <div class="text-[11px] text-slate-400 mt-0.5">{{ req.request_date|date:"M d, Y H:i" }}</div>
+                        </td>
+
+                        <td class="px-5 py-4">
+                            <div class="font-bold text-slate-800 text-xs">{{ req.employee.username }}</div>
+                            <div class="text-[11px] text-slate-500">{{ req.employee.department.name|default:'No Department' }}</div>
+                        </td>
+
+                        <td class="px-5 py-4">
+                            <div class="font-bold text-slate-900 text-xs">{{ req.asset.name }}</div>
+                            <div class="text-[11px] text-slate-400">Available: <span class="font-semibold text-slate-700">{{ req.asset.available_quantity }}</span></div>
+                        </td>
+
+                        <td class="px-5 py-4 text-center font-bold text-slate-900">
+                            {{ req.quantity }}
+                        </td>
+
+                        <td class="px-5 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {% if req.status == 'APPROVED' %}bg-emerald-100 text-emerald-800 border border-emerald-200{% elif req.status == 'REJECTED' %}bg-rose-100 text-rose-800 border border-rose-200{% elif req.status == 'RETURNED' %}bg-slate-100 text-slate-700 border border-slate-200{% else %}bg-amber-100 text-amber-800 border border-amber-200{% endif %}">
+                                {% if req.status == 'APPROVED' %}<i class="fa-solid fa-check mr-1"></i>{% elif req.status == 'REJECTED' %}<i class="fa-solid fa-xmark mr-1"></i>{% elif req.status == 'RETURNED' %}<i class="fa-solid fa-arrow-rotate-left mr-1"></i>{% else %}<i class="fa-regular fa-clock mr-1"></i>{% endif %}
+                                {{ req.status }}
+                            </span>
+                        </td>
+
+                        <td class="px-5 py-4 text-xs">
+                            {% if req.notes %}
+                                <div class="text-slate-600"><strong class="text-slate-700">Req Note:</strong> {{ req.notes }}</div>
+                            {% endif %}
+                            {% if req.admin_notes %}
+                                <div class="text-rose-600 mt-0.5"><strong class="text-rose-700">Admin Note:</strong> {{ req.admin_notes }}</div>
+                            {% endif %}
+                            {% if not req.notes and not req.admin_notes %}
+                                <span class="text-slate-400 italic">—</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-5 py-4 text-right whitespace-nowrap">
+                            {% if req.status == 'PENDING' and user.is_admin_role %}
+                                <div class="inline-flex items-center space-x-1.5">
+                                    <form method="post" action="{% url 'approve_request' req.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm transition">
+                                            Approve
+                                        </button>
+                                    </form>
+                                    <button type="button" onclick="openRejectModal('{{ req.id }}', '{{ req.employee.username }}', '{{ req.asset.name }}')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm transition">
+                                        Reject
+                                    </button>
+                                </div>
+                            {% elif req.status == 'APPROVED' %}
+                                <form method="post" action="{% url 'return_asset' req.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                                        <i class="fa-solid fa-arrow-rotate-left mr-1"></i>Return Asset
+                                    </button>
+                                </form>
+                            {% elif req.status == 'RETURNED' %}
+                                <span class="text-xs text-slate-400">Returned</span>
+                            {% else %}
+                                <span class="text-xs text-slate-400">Closed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-5 py-12 text-center text-slate-400 text-sm">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300 block"></i>
+                            No requests found matching your filter.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Reject Reason -->
+<div id="rejectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+        <h3 class="text-lg font-bold text-slate-900 mb-2">Reject Request</h3>
+        <p class="text-xs text-slate-500 mb-4" id="rejectModalSubtitle"></p>
+        <form method="post" id="rejectForm" action="">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Feedback / Reason *</label>
+                <textarea name="admin_notes" rows="3" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 outline-none" placeholder="Explain rejection reason..."></textarea>
+            </div>
+            <div class="flex items-center justify-end space-x-2">
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRejectModal(reqId, employee, asset) {
+        document.getElementById('rejectModalSubtitle').innerText = `Rejection for request #${reqId} (${employee} - ${asset})`;
+        document.getElementById('rejectForm').action = `/admin/request/${reqId}/reject/`;
+        document.getElementById('rejectModal').classList.remove('hidden');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

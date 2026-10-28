@@ -1,171 +1,513 @@
 {% extends 'base.html' %}
+{% block title %}Admin Dashboard - SecureCorp Inventory{% endblock %}
+
 {% block content %}
-<h1 class="text-3xl font-bold mb-6">Admin Dashboard</h1>
+<div class="space-y-8">
+    <!-- Header with Quick Action Bar -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                    <i class="fa-solid fa-shield-halved mr-1"></i>ADMIN CONSOLE
+                </span>
+                <span class="text-xs text-slate-400">SecureCorp Management HQ</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">Admin Dashboard</h1>
+            <p class="text-xs sm:text-sm text-slate-500">Monitor assets, approve departmental requests, dispatch tasks, and handle issues.</p>
+        </div>
 
-<div class="mb-6 flex space-x-4">
-    <a href="{% url 'add_asset' %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Asset</a>
-    <a href="{% url 'generate_pdf_report' %}" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Export PDF Report</a>
-    <a href="{% url 'generate_excel_report' %}" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Export Excel Report</a>
-</div>
-
-{% if low_stock_assets %}
-<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
-    <strong class="font-bold">Low Stock Alert!</strong>
-    <ul class="list-disc ml-5 mt-2">
-    {% for asset in low_stock_assets %}
-        <li>{{ asset.name }} (Available: {{ asset.available_quantity }}, Threshold: {{ asset.low_stock_threshold }})</li>
-    {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <!-- Assets Table -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">Inventory Assets</h2>
-        <table class="min-w-full table-auto">
-            <thead class="bg-gray-200">
-                <tr>
-                    <th class="px-4 py-2 text-left">Name</th>
-                    <th class="px-4 py-2 text-left">Total</th>
-                    <th class="px-4 py-2 text-left">Available</th>
-                    <th class="px-4 py-2 text-left">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for asset in assets %}
-                <tr class="border-b">
-                    <td class="px-4 py-2">{{ asset.name }}</td>
-                    <td class="px-4 py-2">{{ asset.total_quantity }}</td>
-                    <td class="px-4 py-2 font-bold {% if asset.is_low_stock %}text-red-600{% else %}text-green-600{% endif %}">
-                        {{ asset.available_quantity }}
-                    </td>
-                    <td class="px-4 py-2">
-                        <a href="{% url 'edit_asset' asset.id %}" class="text-blue-600 hover:underline">Edit</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pending Requests Table -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">Pending Asset Requests</h2>
-        <table class="min-w-full table-auto">
-            <thead class="bg-gray-200">
-                <tr>
-                    <th class="px-4 py-2 text-left">Employee</th>
-                    <th class="px-4 py-2 text-left">Asset</th>
-                    <th class="px-4 py-2 text-left">Qty</th>
-                    <th class="px-4 py-2 text-left">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for req in pending_requests %}
-                <tr class="border-b">
-                    <td class="px-4 py-2">{{ req.employee.username }}</td>
-                    <td class="px-4 py-2">{{ req.asset.name }}</td>
-                    <td class="px-4 py-2">{{ req.quantity }}</td>
-                    <td class="px-4 py-2 space-x-2 flex">
-                        <form method="post" action="{% url 'approve_request' req.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="bg-green-500 text-white px-2 py-1 rounded text-sm">Approve</button>
-                        </form>
-                        <form method="post" action="{% url 'reject_request' req.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded text-sm">Reject</button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="px-4 py-2 text-gray-500">No pending requests.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-<!-- Employee Team Overview Section -->
-<div class="mt-8 bg-white p-6 rounded shadow mb-10">
-    <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4">
-        <h2 class="text-2xl font-bold text-gray-800">Employee Team Overview</h2>
-        <div class="space-x-2 mt-4 md:mt-0">
-            <a href="{% url 'create_task' %}" class="bg-blue-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-blue-700">+ Create Task</a>
-            <a href="{% url 'grant_award' %}" class="bg-yellow-500 text-white font-bold px-4 py-2 rounded shadow hover:bg-yellow-600">⭐ Grant Award</a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{% url 'add_asset' %}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-plus mr-1.5"></i>Add Asset
+            </a>
+            <a href="{% url 'add_department' %}" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-building mr-1.5"></i>Add Dept
+            </a>
+            <a href="{% url 'create_task' %}" class="inline-flex items-center bg-cyan-600 hover:bg-cyan-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-list-check mr-1.5"></i>Create Task
+            </a>
+            <a href="{% url 'grant_award' %}" class="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-trophy mr-1.5"></i>Grant Award
+            </a>
+            <div class="inline-flex rounded-xl shadow-sm border border-slate-200 bg-white overflow-hidden">
+                <a href="{% url 'generate_pdf_report' %}" class="inline-flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 border-r border-slate-200" title="Export PDF Report">
+                    <i class="fa-solid fa-file-pdf mr-1 text-rose-500"></i>PDF
+                </a>
+                <a href="{% url 'generate_excel_report' %}" class="inline-flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50" title="Export Excel Report">
+                    <i class="fa-solid fa-file-excel mr-1 text-emerald-600"></i>Excel
+                </a>
+            </div>
         </div>
     </div>
-    
-    <div class="space-y-8">
-        {% for employee in employees %}
-        <div class="border rounded-lg p-6 bg-gray-50 shadow-sm">
-            <div class="flex items-center justify-between border-b pb-3 mb-4">
-                <h3 class="text-xl font-bold text-blue-900 flex items-center">
-                    <span class="bg-blue-200 text-blue-800 rounded-full w-10 h-10 flex items-center justify-center mr-3 text-lg">
-                        {{ employee.username|first|upper }}
-                    </span>
-                    {{ employee.username }}
-                </h3>
-                <div class="flex items-center space-x-4">
-                    <div class="flex flex-wrap gap-2">
-                        {% for award in employee.awards.all %}
-                            <span class="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded-full font-bold shadow-sm" title="Awarded on {{ award.awarded_at|date:'M d, Y' }}">
-                                ⭐ {{ award.name }}
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Total Assets -->
+        <a href="{% url 'asset_list' %}" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Assets</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-solid fa-boxes-stacked text-sm"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ total_assets_count }}</div>
+            <span class="text-xs text-blue-600 font-medium">View catalogue &rarr;</span>
+        </a>
+
+        <!-- Low Stock Alert -->
+        <a href="{% url 'asset_list' %}?stock=low_stock" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Low Stock</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-bold {% if low_stock_count > 0 %}text-rose-600{% else %}text-slate-900{% endif %}">{{ low_stock_count }}</div>
+            <span class="text-xs {% if low_stock_count > 0 %}text-rose-600 font-semibold{% else %}text-slate-400{% endif %}">Items need restock</span>
+        </a>
+
+        <!-- Pending Requests -->
+        <a href="{% url 'request_list' %}?status=PENDING" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Requests</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-solid fa-clock text-sm"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-bold {% if pending_requests_count > 0 %}text-amber-600{% else %}text-slate-900{% endif %}">{{ pending_requests_count }}</div>
+            <span class="text-xs text-amber-600 font-medium">Pending approvals &rarr;</span>
+        </a>
+
+        <!-- Active Tasks -->
+        <a href="{% url 'task_list' %}" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tasks</span>
+                <div class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-solid fa-list-check text-sm"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ active_tasks_count }}</div>
+            <span class="text-xs text-cyan-600 font-medium">Active workflows &rarr;</span>
+        </a>
+
+        <!-- Open Issues -->
+        <a href="{% url 'issue_list' %}" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Issues</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-solid fa-wrench text-sm"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ total_issues_count }}</div>
+            <span class="text-xs text-rose-600 font-medium">Complaints & issues &rarr;</span>
+        </a>
+
+        <!-- Departments -->
+        <a href="{% url 'department_list' %}" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Depts</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-solid fa-building text-sm"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ total_depts_count }}</div>
+            <span class="text-xs text-indigo-600 font-medium">Manage depts &rarr;</span>
+        </a>
+    </div>
+
+    <!-- Low Stock Alert Warning Banner -->
+    {% if low_stock_assets %}
+    <div class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-xl shadow-sm">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-triangle-exclamation text-rose-600 text-xl"></i>
+                <div>
+                    <h3 class="text-sm font-bold text-rose-900">Low Stock Alert Detected</h3>
+                    <p class="text-xs text-rose-700">The following {{ low_stock_assets|length }} items are at or below their restock threshold:</p>
+                </div>
+            </div>
+            <a href="{% url 'asset_list' %}?stock=low_stock" class="text-xs font-bold text-rose-700 hover:text-rose-900 underline">View All Low Stock &rarr;</a>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+            {% for asset in low_stock_assets %}
+                <span class="inline-flex items-center bg-white border border-rose-200 text-rose-800 text-xs px-2.5 py-1 rounded-lg font-medium shadow-2xs">
+                    {{ asset.name }} &bull; <strong class="ml-1 text-rose-600">{{ asset.available_quantity }} left</strong> (Threshold: {{ asset.low_stock_threshold }})
+                    <a href="{% url 'edit_asset' asset.id %}" class="ml-2 text-blue-600 hover:text-blue-800 font-bold" title="Edit / Restock">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 2-Column: Pending Requests & Recent Assets -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Pending Requests Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                    <h2 class="text-lg font-bold text-slate-900">Pending Asset Requests</h2>
+                </div>
+                <a href="{% url 'request_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    View All ({{ pending_requests_count }}) &rarr;
+                </a>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar flex-grow">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3">Employee</th>
+                            <th class="px-5 py-3">Asset</th>
+                            <th class="px-5 py-3 text-center">Qty</th>
+                            <th class="px-5 py-3 text-right">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for req in pending_requests %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-5 py-3.5">
+                                <div class="font-medium text-slate-900">{{ req.employee.username }}</div>
+                                <div class="text-xs text-slate-400">{{ req.employee.department.name|default:'No Department' }}</div>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <div class="font-medium text-slate-800">{{ req.asset.name }}</div>
+                                <div class="text-xs text-slate-400">Available: <span class="font-bold {% if req.asset.available_quantity < req.quantity %}text-rose-600{% else %}text-emerald-600{% endif %}">{{ req.asset.available_quantity }}</span></div>
+                            </td>
+                            <td class="px-5 py-3.5 text-center font-bold text-slate-800">
+                                {{ req.quantity }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                <div class="inline-flex items-center space-x-1.5">
+                                    <form method="post" action="{% url 'approve_request' req.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm transition" title="Approve Request">
+                                            <i class="fa-solid fa-check mr-1"></i>Approve
+                                        </button>
+                                    </form>
+                                    <button type="button" onclick="openRejectModal('{{ req.id }}', '{{ req.employee.username }}', '{{ req.asset.name }}')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm transition" title="Reject Request">
+                                        <i class="fa-solid fa-xmark mr-1"></i>Reject
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-8 text-center text-slate-400 text-xs">
+                                <i class="fa-regular fa-circle-check text-2xl text-emerald-400 mb-2 block"></i>
+                                No pending requests waiting for review.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Inventory Overview Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <h2 class="text-lg font-bold text-slate-900">Inventory Assets</h2>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'add_asset' %}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">+ Add New</a>
+                    <a href="{% url 'asset_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">View All ({{ total_assets_count }}) &rarr;</a>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar flex-grow">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3">Asset</th>
+                            <th class="px-5 py-3">Category</th>
+                            <th class="px-5 py-3 text-center">Availability</th>
+                            <th class="px-5 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for asset in recent_assets %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-5 py-3.5">
+                                <div class="font-medium text-slate-900">{{ asset.name }}</div>
+                                <div class="text-xs text-slate-400">{{ asset.department.name|default:'General / Shared' }}</div>
+                            </td>
+                            <td class="px-5 py-3.5 text-xs text-slate-600">
+                                {{ asset.category.name|default:'—' }}
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
+                                <div class="inline-flex items-center space-x-1.5">
+                                    <span class="font-bold text-xs {% if asset.available_quantity == 0 %}text-rose-600{% elif asset.is_low_stock %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                                        {{ asset.available_quantity }} / {{ asset.total_quantity }}
+                                    </span>
+                                </div>
+                                <div class="w-20 bg-slate-200 h-1.5 rounded-full mx-auto mt-1 overflow-hidden">
+                                    <div class="h-1.5 rounded-full {% if asset.available_quantity == 0 %}bg-rose-500{% elif asset.is_low_stock %}bg-amber-500{% else %}bg-emerald-500{% endif %}" style="width: {{ asset.availability_percent }}%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5 text-right whitespace-nowrap text-xs space-x-2">
+                                <a href="{% url 'edit_asset' asset.id %}" class="text-blue-600 hover:text-blue-800 font-semibold" title="Edit">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <a href="{% url 'delete_asset' asset.id %}" class="text-rose-500 hover:text-rose-700 font-semibold" title="Delete">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-8 text-center text-slate-400 text-xs">
+                                No assets registered yet. <a href="{% url 'add_asset' %}" class="text-blue-600 underline">Add first asset</a>.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departments Overview & Quick Management Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 gap-2 mb-6">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-building mr-2 text-indigo-600"></i>Department Management & Overview
+                </h2>
+                <p class="text-xs text-slate-500">Track staffing, allocated assets, and open issues across corporate units.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="{% url 'add_department' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    <i class="fa-solid fa-plus mr-1"></i>Add Department
+                </a>
+                <a href="{% url 'department_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    Full Department List &rarr;
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for dept in departments %}
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-white hover:shadow-md transition">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-900">{{ dept.name }}</h3>
+                        <p class="text-xs text-slate-500 line-clamp-1 mt-0.5">{{ dept.description|default:'No description' }}</p>
+                    </div>
+                    <div class="flex items-center space-x-1 text-slate-400">
+                        <a href="{% url 'edit_department' dept.id %}" class="hover:text-blue-600 text-xs p-1" title="Edit">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="{% url 'department_detail' dept.id %}" class="hover:text-indigo-600 text-xs p-1" title="View Details">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-200 text-center">
+                    <div>
+                        <span class="block text-xs text-slate-400">Staff</span>
+                        <span class="text-sm font-bold text-slate-800">{{ dept.emp_count }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-slate-400">Assets</span>
+                        <span class="text-sm font-bold text-slate-800">{{ dept.asset_count }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-slate-400">Issues</span>
+                        <span class="text-sm font-bold {% if dept.issue_count > 0 %}text-rose-600{% else %}text-slate-800{% endif %}">{{ dept.issue_count }}</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-4 text-center py-8 text-slate-400 text-xs">
+                No departments defined. <a href="{% url 'add_department' %}" class="text-blue-600 underline">Create one now</a>.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Employee Team & Workload Overview -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 gap-2 mb-6">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-users mr-2 text-purple-600"></i>Employee Team & Task Workload
+                </h2>
+                <p class="text-xs text-slate-500">Monitor employee task execution, workload distribution, and achievements.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="{% url 'create_task' %}" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    <i class="fa-solid fa-plus mr-1"></i>Create Task
+                </a>
+                <a href="{% url 'grant_award' %}" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                    <i class="fa-solid fa-trophy mr-1"></i>Grant Badge
+                </a>
+                <a href="{% url 'employee_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    Full Team Directory &rarr;
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for emp in employees %}
+            <div class="border border-slate-200 rounded-2xl p-5 bg-slate-50/50 hover:bg-white hover:shadow-md transition flex flex-col justify-between">
+                <div>
+                    <!-- Employee Header -->
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm shadow-xs">
+                                {{ emp.username|first|upper }}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 leading-tight">{{ emp.full_name_or_username }}</h3>
+                                <p class="text-xs text-slate-500">{{ emp.department.name|default:'No Department' }}</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'create_task' %}?employee={{ emp.id }}" class="text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded-lg transition" title="Assign New Task">
+                            + Task
+                        </a>
+                    </div>
+
+                    <!-- Awards / Badges pill list -->
+                    <div class="flex flex-wrap gap-1.5 my-3">
+                        {% for award in emp.awards.all %}
+                            <span class="inline-flex items-center bg-amber-50 border border-amber-200 text-amber-800 text-xs px-2 py-0.5 rounded-full font-medium" title="{{ award.description }}">
+                                {{ award.badge_icon }} {{ award.name|truncatechars:18 }}
                             </span>
+                        {% empty %}
+                            <span class="text-xs text-slate-400 italic">No badges awarded yet</span>
                         {% endfor %}
                     </div>
-                    <a href="{% url 'create_task' %}?employee={{ employee.id }}" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold px-3 py-1 rounded text-sm transition whitespace-nowrap">
-                        + Assign Task
-                    </a>
-                </div>
-            </div>
-            
-            <h4 class="font-bold text-gray-700 mb-3">Assigned Tasks</h4>
-            {% if employee.tasks.all %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for task in employee.tasks.all %}
-                <div class="bg-white border rounded p-4 shadow-sm hover:shadow-md transition">
-                    <div class="flex justify-between items-start mb-2">
-                        <h5 class="font-bold text-gray-800">{{ task.title }}</h5>
-                        <span class="text-xs font-bold px-2 py-1 rounded 
-                            {% if task.status == 'COMPLETED' %}bg-green-100 text-green-800
-                            {% elif task.status == 'IN_PROGRESS' %}bg-yellow-100 text-yellow-800
-                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ task.status }}
-                        </span>
+
+                    <!-- Tasks assigned -->
+                    <div class="mt-3 pt-3 border-t border-slate-200">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Current Tasks:</span>
+                        <div class="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                            {% for task in emp.tasks.all %}
+                            <div class="text-xs p-2 rounded-lg bg-white border border-slate-200 flex items-center justify-between">
+                                <span class="font-medium text-slate-800 truncate mr-2">{{ task.title }}</span>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap {% if task.status == 'COMPLETED' %}bg-emerald-100 text-emerald-800{% elif task.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                    {{ task.status }}
+                                </span>
+                            </div>
+                            {% empty %}
+                            <p class="text-xs text-slate-400 italic">No tasks assigned currently.</p>
+                            {% endfor %}
+                        </div>
                     </div>
-                    <p class="text-xs font-bold mb-2 {% if task.status != 'COMPLETED' %}text-red-600{% else %}text-gray-500{% endif %}">
-                        Deadline: {{ task.deadline|date:"M d, Y, h:i A" }}
-                    </p>
-                    <p class="text-sm text-gray-600">{{ task.description|truncatechars:60 }}</p>
                 </div>
-                {% endfor %}
             </div>
-            {% else %}
-            <p class="text-sm text-gray-500 italic">No tasks currently assigned to this employee.</p>
-            {% endif %}
-        </div>
-        {% empty %}
-        <p class="text-gray-500 text-center py-8">No employees found. Please register employees first.</p>
-        {% endfor %}
-        
-        {% if unassigned_tasks %}
-        <div class="border rounded-lg p-6 bg-red-50 shadow-sm border-red-200">
-            <h3 class="text-xl font-bold text-red-900 border-b border-red-200 pb-3 mb-4">
-                ⚠️ Unassigned Tasks
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for task in unassigned_tasks %}
-                <div class="bg-white border border-red-100 rounded p-4 shadow-sm">
-                    <h5 class="font-bold text-gray-800 mb-1">{{ task.title }}</h5>
-                    <p class="text-xs font-bold text-red-600 mb-2">Deadline: {{ task.deadline|date:"M d, Y, h:i A" }}</p>
-                    <p class="text-sm text-gray-600">{{ task.description|truncatechars:60 }}</p>
-                </div>
-                {% endfor %}
+            {% empty %}
+            <div class="col-span-3 text-center py-8 text-slate-400 text-xs">
+                No registered employees found.
             </div>
+            {% endfor %}
         </div>
-        {% endif %}
+    </div>
+
+    <!-- Maintenance Issues & Complaints Overview -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation mr-2 text-rose-600"></i>Recent Maintenance & Complaints
+                </h2>
+                <p class="text-xs text-slate-500">Asset damage reports and departmental issue tickets.</p>
+            </div>
+            <a href="{% url 'issue_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                View All Issues &rarr;
+            </a>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3">Asset / Target</th>
+                        <th class="px-4 py-3">Department</th>
+                        <th class="px-4 py-3">Reported By</th>
+                        <th class="px-4 py-3">Priority</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for issue in maintenance_issues %}
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="px-4 py-3">
+                            <span class="font-medium text-slate-800">{{ issue.asset.name }}</span>
+                            {% if issue.is_damaged %}
+                                <span class="ml-1 text-[10px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded">DAMAGED</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-600">{{ issue.department.name|default:'General' }}</td>
+                        <td class="px-4 py-3 text-xs text-slate-600">{{ issue.reported_by.username }}</td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs font-bold {% if issue.priority == 'URGENT' %}text-rose-600{% elif issue.priority == 'HIGH' %}text-amber-600{% else %}text-slate-600{% endif %}">
+                                {{ issue.priority }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if issue.status == 'REPORTED' %}bg-rose-100 text-rose-800{% elif issue.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                                {{ issue.status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="{% url 'issue_list' %}?tab=maintenance" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                Review &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-6 text-center text-slate-400 text-xs">
+                            No issues reported. System operating normally!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+<!-- Modal for Reject Reason -->
+<div id="rejectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+        <h3 class="text-lg font-bold text-slate-900 mb-2">Reject Asset Request</h3>
+        <p class="text-xs text-slate-500 mb-4" id="rejectModalSubtitle">Provide a reason for rejecting this request.</p>
+        <form method="post" id="rejectForm" action="">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rejection Reason</label>
+                <textarea name="admin_notes" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 outline-none" placeholder="Explain why this request is rejected..."></textarea>
+            </div>
+            <div class="flex items-center justify-end space-x-2">
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRejectModal(reqId, employee, asset) {
+        const modal = document.getElementById('rejectModal');
+        const subtitle = document.getElementById('rejectModalSubtitle');
+        const form = document.getElementById('rejectForm');
+        
+        subtitle.innerText = `Rejecting request from ${employee} for ${asset}.`;
+        form.action = `/admin/request/${reqId}/reject/`;
+        modal.classList.remove('hidden');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+    }
+</script>
 {% endblock %}

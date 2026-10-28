@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Department Management - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+                    ORGANIZATION
+                </span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Department Management</h1>
+            <p class="text-xs text-slate-500">Manage organizational divisions, staffing allocations, and assets.</p>
+        </div>
+
+        {% if user.is_admin_role %}
+        <div>
+            <a href="{% url 'add_department' %}" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-plus mr-1.5"></i>Create Department
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <form method="get" action="{% url 'department_list' %}" class="flex items-center space-x-2">
+            <div class="relative flex-grow">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search departments by name..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition">
+                Search
+            </button>
+            {% if search_query %}
+                <a href="{% url 'department_list' %}" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-2">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Department Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for dept in departments %}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between hover:shadow-md transition">
+            <div>
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">{{ dept.name }}</h2>
+                            <span class="text-xs text-slate-400">ID: #DEPT-{{ dept.id }}</span>
+                        </div>
+                    </div>
+
+                    {% if user.is_admin_role %}
+                    <div class="flex items-center space-x-1">
+                        <a href="{% url 'edit_department' dept.id %}" class="text-slate-400 hover:text-blue-600 p-1.5 transition" title="Edit Department">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="{% url 'delete_department' dept.id %}" class="text-slate-400 hover:text-rose-600 p-1.5 transition" title="Delete Department">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <p class="text-xs text-slate-600 mt-4 line-clamp-2">
+                    {{ dept.description|default:'No specific description specified for this organizational unit.' }}
+                </p>
+
+                <!-- Stats Counters -->
+                <div class="grid grid-cols-3 gap-2 mt-5 p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Team</span>
+                        <span class="text-base font-bold text-slate-800">{{ dept.emp_count }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Assets</span>
+                        <span class="text-base font-bold text-slate-800">{{ dept.asset_count }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Issues</span>
+                        <span class="text-base font-bold {% if dept.open_issues_count > 0 or dept.maintenance_count > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+                            {{ dept.open_issues_count|add:dept.maintenance_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Link -->
+            <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <a href="{% url 'department_detail' dept.id %}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
+                    <span>View Department Profile</span>
+                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-building text-4xl text-slate-300 mb-3 block"></i>
+            <h3 class="text-sm font-bold text-slate-700">No departments found</h3>
+            <p class="text-xs text-slate-400 mt-1">Try modifying your search query or create a new department.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

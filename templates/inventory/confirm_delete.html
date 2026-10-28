@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Deletion - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-12">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-rose-900 via-rose-800 to-slate-900 text-white p-6 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/20">
+                <i class="fa-solid fa-triangle-exclamation text-2xl text-rose-300"></i>
+            </div>
+            <h1 class="text-xl font-bold font-brand">Confirm Deletion</h1>
+            <p class="text-xs text-rose-200 mt-1">This action cannot be undone.</p>
+        </div>
+
+        <div class="p-6 text-center">
+            <p class="text-sm text-slate-700 mb-6">
+                Are you sure you want to delete the {{ item_type }} <strong class="text-rose-600 block mt-1 text-base">"{{ item_name }}"</strong>?
+            </p>
+
+            <form method="post" class="flex items-center justify-center space-x-3">
+                {% csrf_token %}
+                <a href="{% url cancel_url %}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition">
+                    <i class="fa-solid fa-trash-can mr-1.5"></i>Yes, Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

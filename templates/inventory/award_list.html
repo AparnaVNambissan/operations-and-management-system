@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Awards & Badge Showcase - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                    GAMIFICATION & RECOGNITION
+                </span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Awards & Badges Center</h1>
+            <p class="text-xs text-slate-500">Recognize high-performance work, punctuality, and inventory diligence.</p>
+        </div>
+
+        {% if user.is_admin_role %}
+        <div>
+            <a href="{% url 'grant_award' %}" class="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-trophy mr-1.5"></i>Grant Award / Badge
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Leaderboard / Top Achievers Section -->
+    {% if leaderboard %}
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-md">
+        <h2 class="text-lg font-bold font-brand mb-4 flex items-center text-amber-300">
+            <i class="fa-solid fa-crown mr-2 text-amber-400"></i>Company Leaderboard - Top Badge Earners
+        </h2>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {% for achiever in leaderboard %}
+            <div class="bg-white/10 backdrop-blur-xs rounded-xl p-4 border border-white/10 flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-amber-400 text-slate-900 font-bold flex items-center justify-center text-sm shadow-md">
+                    #{{ forloop.counter }}
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-white leading-tight">{{ achiever.username }}</h3>
+                    <span class="text-xs text-amber-300 font-semibold">{{ achiever.award_count }} Badges</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Awards Wall Grid -->
+    <div>
+        <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+            <i class="fa-solid fa-medal mr-2 text-amber-500"></i>All Granted Awards ({{ awards.count }})
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for award in awards %}
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between hover:shadow-md transition">
+                <div>
+                    <div class="flex items-start justify-between">
+                        <div class="text-4xl mb-2">{{ award.badge_icon }}</div>
+                        {% if user.is_admin_role %}
+                        <a href="{% url 'delete_award' award.id %}" class="text-slate-400 hover:text-rose-600 text-xs p-1" title="Revoke Award">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <h3 class="font-bold text-slate-900 text-base mb-1">{{ award.name }}</h3>
+                    <p class="text-xs text-slate-500 mb-3">{{ award.description|default:'Awarded for outstanding contribution and adherence to operational standards.' }}</p>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Awarded To</span>
+                        <strong class="text-slate-800">{{ award.employee.username }}</strong>
+                    </div>
+                    <span class="text-[11px] text-slate-400">{{ award.awarded_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-4 text-center py-12 bg-white rounded-2xl border border-slate-200">
+                <i class="fa-solid fa-award text-4xl text-amber-300 mb-2 block"></i>
+                <h3 class="text-sm font-bold text-slate-700">No awards granted yet</h3>
+                <p class="text-xs text-slate-400 mt-1">Complete tasks on time or have an administrator grant a badge.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

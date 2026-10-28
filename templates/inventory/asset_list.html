@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block title %}Asset Inventory & Availability - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                    INVENTORY
+                </span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Asset List & Availability</h1>
+            <p class="text-xs text-slate-500">Real-time equipment availability, inventory levels, and requisitions.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            {% if user.is_admin_role %}
+                <a href="{% url 'add_asset' %}" class="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition">
+                    <i class="fa-solid fa-plus mr-1.5"></i>Add Asset
+                </a>
+                <a href="{% url 'category_list' %}" class="inline-flex items-center bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition">
+                    <i class="fa-solid fa-folder-tree mr-1.5"></i>Categories
+                </a>
+                <a href="{% url 'generate_pdf_report' %}" class="inline-flex items-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
+                    <i class="fa-solid fa-file-pdf mr-1 text-rose-500"></i>PDF
+                </a>
+                <a href="{% url 'generate_excel_report' %}" class="inline-flex items-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
+                    <i class="fa-solid fa-file-excel mr-1 text-emerald-600"></i>Excel
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <!-- Search -->
+            <div class="lg:col-span-2">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Search</label>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" name="search" value="{{ search }}" placeholder="Search by asset name or specs..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Category</label>
+                <select name="category" class="w-full py-1.5 px-3 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Department Filter -->
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Department</label>
+                <select name="department" class="w-full py-1.5 px-3 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Availability Filter -->
+            <div class="flex items-end space-x-2">
+                <div class="flex-grow">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Stock Status</label>
+                    <select name="stock" class="w-full py-1.5 px-3 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">All Statuses</option>
+                        <option value="in_stock" {% if selected_stock == 'in_stock' %}selected{% endif %}>In Stock</option>
+                        <option value="low_stock" {% if selected_stock == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                        <option value="out_of_stock" {% if selected_stock == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Assets Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                    <tr>
+                        <th class="px-5 py-3.5">Asset Details</th>
+                        <th class="px-5 py-3.5">Category</th>
+                        <th class="px-5 py-3.5">Department</th>
+                        <th class="px-5 py-3.5 text-center">Availability Bar</th>
+                        <th class="px-5 py-3.5 text-center">Status</th>
+                        <th class="px-5 py-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for asset in assets %}
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <!-- Asset Name & Description -->
+                        <td class="px-5 py-4">
+                            <div class="font-bold text-slate-900 text-sm">{{ asset.name }}</div>
+                            <div class="text-xs text-slate-500 line-clamp-1 max-w-xs mt-0.5">{{ asset.description|default:'No specifications provided.' }}</div>
+                        </td>
+
+                        <!-- Category -->
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">
+                                {{ asset.category.name|default:'Uncategorized' }}
+                            </span>
+                        </td>
+
+                        <!-- Department -->
+                        <td class="px-5 py-4">
+                            <span class="text-xs text-slate-600 font-medium">
+                                {{ asset.department.name|default:'General / Shared' }}
+                            </span>
+                        </td>
+
+                        <!-- Availability & Stock Level Progress -->
+                        <td class="px-5 py-4 text-center">
+                            <div class="font-bold text-xs mb-1">
+                                <span class="{% if asset.available_quantity == 0 %}text-rose-600{% elif asset.is_low_stock %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                                    {{ asset.available_quantity }}
+                                </span>
+                                <span class="text-slate-400">/ {{ asset.total_quantity }} Units</span>
+                            </div>
+                            <div class="w-24 bg-slate-200 h-2 rounded-full mx-auto overflow-hidden">
+                                <div class="h-2 rounded-full {% if asset.available_quantity == 0 %}bg-rose-500{% elif asset.is_low_stock %}bg-amber-500{% else %}bg-emerald-500{% endif %}" style="width: {{ asset.availability_percent }}%;"></div>
+                            </div>
+                        </td>
+
+                        <!-- Status Badge -->
+                        <td class="px-5 py-4 text-center">
+                            {% if asset.available_quantity == 0 %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                    <i class="fa-solid fa-ban mr-1"></i>Out of Stock
+                                </span>
+                            {% elif asset.is_low_stock %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>Low Stock
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <i class="fa-solid fa-check mr-1"></i>In Stock
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-5 py-4 text-right whitespace-nowrap">
+                            {% if user.is_admin_role %}
+                                <div class="inline-flex items-center space-x-2">
+                                    <a href="{% url 'edit_asset' asset.id %}" class="bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold px-2.5 py-1.5 rounded-lg transition">
+                                        <i class="fa-solid fa-pen mr-1"></i>Edit
+                                    </a>
+                                    <a href="{% url 'delete_asset' asset.id %}" class="bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold px-2.5 py-1.5 rounded-lg transition">
+                                        <i class="fa-solid fa-trash mr-1"></i>Delete
+                                    </a>
+                                </div>
+                            {% else %}
+                                {% if asset.available_quantity > 0 %}
+                                    <button type="button" onclick="openRequestModal('{{ asset.id }}', '{{ asset.name }}', {{ asset.available_quantity }})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                                        <i class="fa-solid fa-hand-holding-hand mr-1"></i>Request
+                                    </button>
+                                {% else %}
+                                    <span class="text-xs text-slate-400 italic">Unavailable</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-12 text-center text-slate-400 text-sm">
+                            <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300 block"></i>
+                            No assets matching the current filters.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Requesting an Asset (for Employees) -->
+<div id="requestModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+        <h3 class="text-lg font-bold text-slate-900 mb-1" id="requestModalTitle">Request Asset</h3>
+        <p class="text-xs text-slate-500 mb-4" id="requestModalSubtitle">Specify quantity and request details.</p>
+        
+        <form method="post" id="requestAssetForm" action="">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Quantity *</label>
+                <input type="number" name="quantity" id="requestQuantityInput" value="1" min="1" max="1" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <span class="text-[11px] text-slate-400 mt-1 block" id="availableStockHelp"></span>
+            </div>
+
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notes / Purpose (Optional)</label>
+                <textarea name="notes" rows="3" placeholder="Reason for requesting this asset..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2">
+                <button type="button" onclick="closeRequestModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRequestModal(assetId, assetName, availableQty) {
+        const modal = document.getElementById('requestModal');
+        const title = document.getElementById('requestModalTitle');
+        const subtitle = document.getElementById('requestModalSubtitle');
+        const input = document.getElementById('requestQuantityInput');
+        const help = document.getElementById('availableStockHelp');
+        const form = document.getElementById('requestAssetForm');
+
+        title.innerText = `Request: ${assetName}`;
+        subtitle.innerText = `Submit a requisition request to inventory management.`;
+        input.max = availableQty;
+        input.value = 1;
+        help.innerText = `Max available for checkout: ${availableQty} units`;
+        form.action = `/request-asset/${assetId}/`;
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeRequestModal() {
+        document.getElementById('requestModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

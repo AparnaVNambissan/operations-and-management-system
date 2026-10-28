@@ -1,93 +1,139 @@
 {% extends 'base.html' %}
+{% block title %}{{ title }} - SecureCorp{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto bg-white p-8 rounded shadow">
-    <h1 class="text-3xl font-bold mb-6">Create New Task</h1>
-
-    <form method="post" action="{% url 'create_task' %}">
-        {% csrf_token %}
-        
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Title</label>
-            {{ form.title }}
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Description</label>
-            {{ form.description }}
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Required Skill (Optional for Auto-Assign)</label>
-            {{ form.required_skill }}
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Assign Manually (Or leave blank to Auto-Assign)</label>
-            {{ form.assigned_to }}
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-gray-700 font-bold mb-2">Deadline</label>
-                {{ form.deadline }}
-            </div>
-            <div>
-                <label class="block text-gray-700 font-bold mb-2">Workload (Hours)</label>
-                {{ form.workload_hours }}
-            </div>
-        </div>
-
-        <div class="mb-6 p-4 border rounded bg-blue-50">
-            <label class="flex items-center">
-                <input type="checkbox" name="auto_assign" value="1" class="mr-2 h-5 w-5 text-blue-600">
-                <span class="font-bold text-blue-800">Auto-Assign Task</span>
-            </label>
-            <p class="text-sm text-blue-600 mt-1">If checked, the system will find an employee with the Required Skill who has the lowest current workload.</p>
-        </div>
-
-        <div class="mb-6">
-            <h3 class="font-bold text-lg mb-2">Subtasks</h3>
-            <div id="subtasks-container">
-                <div class="mb-2 flex">
-                    <input type="text" name="subtasks" placeholder="Subtask 1" class="border rounded px-3 py-2 w-full">
+<div class="max-w-3xl mx-auto py-8">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-slate-900 via-cyan-900 to-blue-900 text-white p-6 sm:p-8">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                    <i class="fa-solid fa-list-check text-2xl text-cyan-300"></i>
                 </div>
-                <div class="mb-2 flex">
-                    <input type="text" name="subtasks" placeholder="Subtask 2" class="border rounded px-3 py-2 w-full">
-                </div>
-                <div class="mb-2 flex">
-                    <input type="text" name="subtasks" placeholder="Subtask 3" class="border rounded px-3 py-2 w-full">
+                <div>
+                    <h1 class="text-xl font-bold font-brand">{{ title }}</h1>
+                    <p class="text-xs text-cyan-200">Configure task scope, assignees, subtask milestones, and priority</p>
                 </div>
             </div>
-            <button type="button" onclick="addSubtask()" class="text-blue-600 hover:underline text-sm">+ Add another subtask</button>
         </div>
 
-        <div class="flex items-center justify-between">
-            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
-                Create Task
-            </button>
-            <a href="{% url 'admin_dashboard' %}" class="text-gray-600 hover:underline">Cancel</a>
+        <!-- Form Body -->
+        <div class="p-6 sm:p-8">
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Task Title *</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Description</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Required Skill (For Auto-Assign)</label>
+                        {{ form.required_skill }}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Assign Manually</label>
+                        {{ form.assigned_to }}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Priority *</label>
+                        {{ form.priority }}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Workload (Hours) *</label>
+                        {{ form.workload_hours }}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Deadline *</label>
+                        {{ form.deadline }}
+                    </div>
+                </div>
+
+                <!-- Auto-Assign Box -->
+                <div class="p-4 rounded-xl bg-cyan-50/70 border border-cyan-200">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="auto_assign" value="1" class="h-4 w-4 text-cyan-600 focus:ring-cyan-500 rounded mr-2.5">
+                        <span class="text-xs font-bold text-cyan-900">Auto-Assign via Workload Optimization</span>
+                    </label>
+                    <p class="text-[11px] text-cyan-700 mt-1 ml-6">
+                        Automatically assigns this task to the available employee matching the Required Skill who currently has the lowest pending workload hours.
+                    </p>
+                </div>
+
+                <!-- Subtasks Builder -->
+                <div class="pt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Subtask Checklist Milestones</label>
+                        <button type="button" onclick="addSubtask()" class="text-xs text-cyan-700 hover:text-cyan-900 font-bold flex items-center">
+                            <i class="fa-solid fa-plus-circle mr-1"></i>Add Subtask
+                        </button>
+                    </div>
+
+                    <div id="subtasksContainer" class="space-y-2">
+                        {% if task %}
+                            {% for st in task.subtasks.all %}
+                            <div class="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                <span class="text-xs font-bold text-slate-400 w-6 text-center">{{ forloop.counter }}.</span>
+                                <span class="text-xs font-medium text-slate-800 flex-grow">{{ st.title }}</span>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded {% if st.is_completed %}bg-emerald-100 text-emerald-800{% else %}bg-slate-200 text-slate-700{% endif %}">
+                                    {% if st.is_completed %}Done{% else %}Pending{% endif %}
+                                </span>
+                            </div>
+                            {% endfor %}
+                            <div class="flex items-center space-x-2">
+                                <input type="text" name="new_subtasks" placeholder="Add additional subtask..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500">
+                            </div>
+                        {% else %}
+                            <div class="flex items-center space-x-2">
+                                <input type="text" name="subtasks" placeholder="Subtask 1: Initial review or inspection" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="text" name="subtasks" placeholder="Subtask 2: Execution and implementation" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="text" name="subtasks" placeholder="Subtask 3: Quality verification and signoff" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="pt-4 flex items-center justify-between border-t border-slate-100">
+                    <a href="{% url 'task_list' %}" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-arrow-left mr-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition">
+                        Save Task
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 
 <script>
-    let subtaskCount = 3;
     function addSubtask() {
-        subtaskCount++;
-        const container = document.getElementById('subtasks-container');
+        const container = document.getElementById('subtasksContainer');
+        const count = container.children.length + 1;
         const div = document.createElement('div');
-        div.className = 'mb-2 flex';
-        div.innerHTML = '<input type="text" name="subtasks" placeholder="Subtask ' + subtaskCount + '" class="border rounded px-3 py-2 w-full">';
+        div.className = 'flex items-center space-x-2 mt-2';
+        const fieldName = {% if task %}'new_subtasks'{% else %}'subtasks'{% endif %};
+        div.innerHTML = `<input type="text" name="${fieldName}" placeholder="Subtask ${count}..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500">`;
         container.appendChild(div);
     }
-    
-    // Add basic Tailwind styling to form inputs
-    document.querySelectorAll('input[type="text"], input[type="number"], select, textarea').forEach(el => {
-        el.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full');
-    });
-    document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
-        el.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full');
-    });
 </script>
 {% endblock %}

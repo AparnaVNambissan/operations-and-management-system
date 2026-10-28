@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}{{ dept.name }} Department - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header Card -->
+    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-3xl font-bold shadow-xs">
+                <i class="fa-solid fa-building"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">{{ dept.name }} Department</h1>
+                    <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full">#DEPT-{{ dept.id }}</span>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">{{ dept.description|default:'No specific description provided.' }}</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <a href="{% url 'department_list' %}" class="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                &larr; All Departments
+            </a>
+            {% if user.is_admin_role %}
+                <a href="{% url 'edit_department' dept.id %}" class="px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition">
+                    <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Staff Count</span>
+            <div class="text-2xl font-bold text-slate-900 mt-1">{{ employees.count }}</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Assigned Assets</span>
+            <div class="text-2xl font-bold text-slate-900 mt-1">{{ assets.count }}</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Department Issues</span>
+            <div class="text-2xl font-bold text-slate-900 mt-1">{{ issues_received.count }}</div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase">Maintenance Reports</span>
+            <div class="text-2xl font-bold text-slate-900 mt-1">{{ maintenance_issues.count }}</div>
+        </div>
+    </div>
+
+    <!-- 2-Column: Staff Members & Department Assets -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Staff Members -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                <i class="fa-solid fa-users mr-2 text-indigo-600"></i>Department Staff
+            </h2>
+
+            <div class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-1">
+                {% for emp in employees %}
+                <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-xs">
+                            {{ emp.username|first|upper }}
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-900">{{ emp.full_name_or_username }}</h3>
+                            <span class="text-[11px] text-slate-400">{{ emp.email|default:'No email' }}</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {% if emp.role == 'ADMIN' %}bg-purple-100 text-purple-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                        {{ emp.role }}
+                    </span>
+                </div>
+                {% empty %}
+                <p class="text-xs text-slate-400 text-center py-6">No staff members currently assigned to this department.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Assigned Assets -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                <i class="fa-solid fa-boxes-stacked mr-2 text-emerald-600"></i>Assigned Assets
+            </h2>
+
+            <div class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-1">
+                {% for asset in assets %}
+                <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900">{{ asset.name }}</h3>
+                        <span class="text-[11px] text-slate-400">{{ asset.category.name|default:'General' }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-bold {% if asset.available_quantity == 0 %}text-rose-600{% elif asset.is_low_stock %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                            {{ asset.available_quantity }} / {{ asset.total_quantity }} Available
+                        </span>
+                        {% if user.is_admin_role %}
+                        <a href="{% url 'edit_asset' asset.id %}" class="text-[11px] text-blue-600 hover:underline block">Edit Asset</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-xs text-slate-400 text-center py-6">No assets specifically assigned to this department.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

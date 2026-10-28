@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Task & Subtask Management - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-100 text-cyan-800">
+                    WORKFLOW ENGINE
+                </span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Task & Subtask Management</h1>
+            <p class="text-xs text-slate-500">Auto-assign tasks by workload, track subtask milestones, and reward timely execution.</p>
+        </div>
+
+        {% if user.is_admin_role %}
+        <div>
+            <a href="{% url 'create_task' %}" class="inline-flex items-center bg-cyan-600 hover:bg-cyan-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">
+                <i class="fa-solid fa-plus mr-1.5"></i>Create New Task
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <form method="get" class="flex flex-wrap items-center gap-2">
+            <select name="status" class="py-1.5 px-3 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                <option value="">All Statuses</option>
+                <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                <option value="IN_PROGRESS" {% if status_filter == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+            </select>
+
+            <select name="priority" class="py-1.5 px-3 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                <option value="">All Priorities</option>
+                <option value="LOW" {% if priority_filter == 'LOW' %}selected{% endif %}>Low</option>
+                <option value="MEDIUM" {% if priority_filter == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                <option value="HIGH" {% if priority_filter == 'HIGH' %}selected{% endif %}>High</option>
+                <option value="URGENT" {% if priority_filter == 'URGENT' %}selected{% endif %}>Urgent</option>
+            </select>
+
+            {% if user.is_admin_role %}
+            <select name="employee" class="py-1.5 px-3 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-cyan-500 outline-none">
+                <option value="">All Employees</option>
+                {% for emp in employees %}
+                    <option value="{{ emp.id }}" {% if selected_employee == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp.username }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg transition">
+                Filter
+            </button>
+        </form>
+
+        <span class="text-slate-400 font-medium">Showing {{ tasks.count }} tasks</span>
+    </div>
+
+    <!-- Tasks Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for task in tasks %}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between hover:shadow-md transition {% if task.status == 'COMPLETED' %}border-emerald-200 bg-emerald-50/20{% endif %}">
+            <div>
+                <!-- Top row: Status & Priority badges -->
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if task.status == 'COMPLETED' %}bg-emerald-100 text-emerald-800{% elif task.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                            {{ task.status }}
+                        </span>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded {% if task.priority == 'URGENT' %}bg-rose-100 text-rose-800{% elif task.priority == 'HIGH' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                            {{ task.priority }}
+                        </span>
+                    </div>
+
+                    {% if user.is_admin_role %}
+                    <div class="flex items-center space-x-1">
+                        <a href="{% url 'edit_task' task.id %}" class="text-slate-400 hover:text-blue-600 p-1" title="Edit Task">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="{% url 'delete_task' task.id %}" class="text-slate-400 hover:text-rose-600 p-1" title="Delete Task">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Title & Description -->
+                <h3 class="font-bold text-slate-900 text-base mb-1">{{ task.title }}</h3>
+                <p class="text-xs text-slate-500 line-clamp-2 mb-3">{{ task.description|default:'No detailed task description.' }}</p>
+
+                <!-- Assignment & Deadline Info -->
+                <div class="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Assigned To:</span>
+                        <strong class="text-slate-800 font-semibold">{{ task.assigned_to.username|default:'Unassigned' }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Workload:</span>
+                        <span class="text-slate-800">{{ task.workload_hours }} Hours</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Deadline:</span>
+                        <span class="font-bold {% if task.is_overdue %}text-rose-600{% else %}text-slate-700{% endif %}">
+                            {{ task.deadline|date:"M d, Y H:i" }}
+                            {% if task.is_overdue %}⚠️{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1">
+                        <span>Checklist Completion</span>
+                        <span>{{ task.progress_percentage }}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div class="h-2 rounded-full {% if task.status == 'COMPLETED' %}bg-emerald-500{% else %}bg-cyan-600{% endif %}" style="width: {{ task.progress_percentage }}%;"></div>
+                    </div>
+                </div>
+
+                <!-- Subtasks Checklist -->
+                <div class="space-y-1.5 pt-2 border-t border-slate-100 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Subtasks ({{ task.subtasks.count }}):</span>
+                    {% for subtask in task.subtasks.all %}
+                    <form method="post" action="{% url 'update_subtask_status' subtask.id %}" class="flex items-center bg-slate-50/70 p-2 rounded-lg border border-slate-200">
+                        {% csrf_token %}
+                        <input type="checkbox" name="is_completed" {% if subtask.is_completed %}checked{% endif %} onchange="this.form.submit()" class="h-4 w-4 text-cyan-600 focus:ring-cyan-500 rounded cursor-pointer mr-2.5">
+                        <span class="text-xs {% if subtask.is_completed %}line-through text-slate-400{% else %}text-slate-800 font-medium{% endif %}">
+                            {{ subtask.title }}
+                        </span>
+                    </form>
+                    {% empty %}
+                    <p class="text-xs text-slate-400 italic">No subtasks defined.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-list-check text-4xl text-slate-300 mb-2 block"></i>
+            <h3 class="text-sm font-bold text-slate-700">No tasks found</h3>
+            <p class="text-xs text-slate-400 mt-1">Create a task or change the filter parameters.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

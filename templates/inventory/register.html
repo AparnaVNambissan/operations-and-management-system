@@ -1,24 +1,128 @@
 {% extends 'base.html' %}
+{% block title %}Register - SecureCorp Inventory{% endblock %}
+
 {% block content %}
-<div class="max-w-md mx-auto bg-white p-8 rounded shadow">
-    <h2 class="text-2xl font-bold mb-6 text-center">Register New Account</h2>
-    <form method="post" action="{% url 'register' %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded mt-4 hover:bg-blue-700">
-            Create Account
-        </button>
-    </form>
-    <p class="mt-4 text-center text-gray-600">
-        Already have an account? <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Log in here</a>.
-    </p>
+<div class="max-w-2xl mx-auto py-6">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white p-6 sm:p-8">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                    <i class="fa-solid fa-user-plus text-2xl text-blue-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold font-brand tracking-wide">Register Account</h1>
+                    <p class="text-xs text-blue-200">Join the SecureCorp Inventory & Management System</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Body -->
+        <div class="p-6 sm:p-8">
+            <form method="post" action="{% url 'register' %}" class="space-y-5">
+                {% csrf_token %}
+
+                <!-- Username & Email -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Username *</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.username.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- First & Last Name -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">First Name</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Last Name</label>
+                        {{ form.last_name }}
+                    </div>
+                </div>
+
+                <!-- Role & Department -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">System Role</label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.role.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Assigned Department</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.department.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Skills -->
+                {% if form.skills.field.queryset.exists %}
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-code-fork mr-1 text-slate-400"></i>Specialized Skills
+                    </label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {% for choice in form.skills %}
+                            <label class="inline-flex items-center text-sm text-slate-700 cursor-pointer hover:text-blue-600">
+                                {{ choice.tag }}
+                                <span class="ml-2">{{ choice.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Passwords -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Password *</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.password1.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Confirm Password *</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.password2.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Create Account</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-600">
+                    Already registered? 
+                    <a href="{% url 'login' %}" class="font-bold text-blue-600 hover:text-blue-800 hover:underline">
+                        Sign in to your account
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
-<style>
-    /* basic styling for django form paragraphs */
-    form p { margin-bottom: 1rem; }
-    form label { display: block; font-weight: bold; margin-bottom: .25rem; color: #374151; }
-    form input { width: 100%; border: 1px solid #d1d5db; border-radius: .25rem; padding: .5rem; }
-    .helptext, .errorlist { font-size: 0.875rem; color: #6b7280; }
-    .errorlist { color: #dc2626; }
-</style>
 {% endblock %}

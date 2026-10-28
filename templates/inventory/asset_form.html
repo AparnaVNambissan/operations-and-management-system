@@ -1,65 +1,129 @@
 {% extends 'base.html' %}
+{% block title %}{{ title }} - SecureCorp{% endblock %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white p-8 border border-gray-200 rounded-lg shadow-md mt-10">
-    <h2 class="text-2xl font-bold mb-6">{{ title }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div class="mt-6 flex space-x-4">
-            <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Save Asset</button>
-            <a href="{% url 'admin_dashboard' %}" class="bg-gray-400 text-white py-2 px-4 rounded hover:bg-gray-500">Cancel</a>
+<div class="max-w-2xl mx-auto py-8">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-slate-900 via-emerald-900 to-blue-900 text-white p-6 sm:p-8">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                    <i class="fa-solid fa-boxes-stacked text-2xl text-emerald-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold font-brand">{{ title }}</h1>
+                    <p class="text-xs text-emerald-200">Manage hardware, devices, and company inventory specs</p>
+                </div>
+            </div>
         </div>
-    </form>
+
+        <!-- Form Body -->
+        <div class="p-6 sm:p-8">
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Asset Name *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Category *</label>
+                            <button type="button" onclick="openCategoryModal()" class="text-xs text-emerald-600 hover:text-emerald-800 font-semibold">
+                                + New Category
+                            </button>
+                        </div>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.category.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Assigned Department</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.department.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Total Quantity *</label>
+                        {{ form.total_quantity }}
+                        {% if form.total_quantity.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.total_quantity.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Available Quantity *</label>
+                        {{ form.available_quantity }}
+                        {% if form.available_quantity.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.available_quantity.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Low Stock Alert *</label>
+                        {{ form.low_stock_threshold }}
+                        {% if form.low_stock_threshold.errors %}
+                            <p class="text-xs text-rose-600 mt-1">{{ form.low_stock_threshold.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Description / Specifications</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="pt-4 flex items-center justify-between border-t border-slate-100">
+                    <a href="{% url 'asset_list' %}" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-arrow-left mr-1"></i>Back to Assets
+                    </a>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition">
+                        Save Asset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
-<!-- Modal for New Category -->
-<div id="categoryModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-        <h3 class="text-lg font-bold mb-4">Add New Category</h3>
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Name</label>
-            <input type="text" id="newCategoryName" class="w-full border rounded px-3 py-2">
-        </div>
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Description (Optional)</label>
-            <textarea id="newCategoryDesc" class="w-full border rounded px-3 py-2"></textarea>
-        </div>
-        <div class="flex justify-end space-x-2">
-            <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-            <button type="button" onclick="saveNewCategory()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+<!-- Modal for New Category Inline Creation -->
+<div id="categoryModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-200">
+        <h3 class="text-lg font-bold text-slate-900 mb-1">Add New Category</h3>
+        <p class="text-xs text-slate-500 mb-4">Create a new category for classification.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Category Name *</label>
+                <input type="text" id="newCategoryName" placeholder="e.g. Laptops, Networking, Monitors" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Description (Optional)</label>
+                <textarea id="newCategoryDesc" rows="2" placeholder="Brief note..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+            </div>
+            <div class="flex items-center justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                <button type="button" onclick="saveNewCategory()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">Save Category</button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Make form inputs look nice since we are using as_p
-    document.querySelectorAll('form input, form select, form textarea').forEach(el => {
-        el.classList.add('w-full', 'border', 'border-gray-300', 'rounded', 'px-3', 'py-2', 'mt-1', 'mb-4');
-    });
-    document.querySelectorAll('form label').forEach(el => {
-        el.classList.add('block', 'font-bold', 'text-gray-700');
-    });
-
-    document.addEventListener("DOMContentLoaded", function() {
-        const categorySelect = document.getElementById("id_category");
-        if (categorySelect) {
-            // Add 'Add New' option to the select dropdown
-            const addNewOption = document.createElement("option");
-            addNewOption.value = "add_new";
-            addNewOption.text = "+ Add New Category...";
-            addNewOption.className = "font-bold text-green-600";
-            categorySelect.appendChild(addNewOption);
-
-            categorySelect.addEventListener("change", function(e) {
-                if (e.target.value === "add_new") {
-                    openCategoryModal();
-                    // Temporarily set value to empty to avoid submitting 'add_new' if user cancels
-                    categorySelect.value = ""; 
-                }
-            });
-        }
-    });
-
     function openCategoryModal() {
         document.getElementById('categoryModal').classList.remove('hidden');
         document.getElementById('newCategoryName').focus();
@@ -72,8 +136,8 @@
     }
 
     function saveNewCategory() {
-        const name = document.getElementById('newCategoryName').value;
-        const description = document.getElementById('newCategoryDesc').value;
+        const name = document.getElementById('newCategoryName').value.trim();
+        const description = document.getElementById('newCategoryDesc').value.trim();
         
         if (!name) {
             alert("Category name is required!");
@@ -93,20 +157,16 @@
             if (data.id) {
                 const select = document.getElementById("id_category");
                 const newOption = new Option(data.name, data.id, true, true);
-                
-                // insert before the "+ Add New Category" option
-                const addNewOption = Array.from(select.options).find(opt => opt.value === "add_new");
-                select.insertBefore(newOption, addNewOption);
-                
-                select.value = data.id; // select the newly created option
+                select.add(newOption);
+                select.value = data.id;
                 closeCategoryModal();
             } else {
-                alert("Error: " + data.error);
+                alert("Error: " + (data.error || "Could not create category"));
             }
         })
         .catch(err => {
             console.error(err);
-            alert("Failed to save category. Check your connection.");
+            alert("Failed to save category.");
         });
     }
 </script>

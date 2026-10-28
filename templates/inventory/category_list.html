@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Asset Categories - SecureCorp{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                    INVENTORY TAXONOMY
+                </span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Asset Categories</h1>
+            <p class="text-xs text-slate-500">Organize equipment and hardware items into standardized categories.</p>
+        </div>
+        <a href="{% url 'asset_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+            &larr; Back to Assets
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Add Category Form -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center">
+                <i class="fa-solid fa-plus-circle mr-2 text-emerald-600"></i>Add New Category
+            </h2>
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Category Name *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Description</label>
+                    {{ form.description }}
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition">
+                    Save Category
+                </button>
+            </form>
+        </div>
+
+        <!-- Categories List -->
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-base font-bold text-slate-900">Existing Categories ({{ categories.count }})</h2>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3">Category</th>
+                            <th class="px-5 py-3">Description</th>
+                            <th class="px-5 py-3 text-center">Assets Count</th>
+                            <th class="px-5 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for cat in categories %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-5 py-3.5 font-bold text-slate-900">
+                                {{ cat.name }}
+                            </td>
+                            <td class="px-5 py-3.5 text-xs text-slate-500">
+                                {{ cat.description|default:'—' }}
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
+                                    {{ cat.asset_count }} Assets
+                                </span>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <a href="{% url 'delete_category' cat.id %}" class="text-rose-500 hover:text-rose-700 text-xs font-bold" title="Delete Category">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-8 text-center text-slate-400 text-xs">
+                                No categories created yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

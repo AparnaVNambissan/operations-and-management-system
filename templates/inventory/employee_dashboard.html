@@ -1,120 +1,490 @@
 {% extends 'base.html' %}
+{% block title %}Employee Dashboard - SecureCorp Inventory{% endblock %}
+
 {% block content %}
-<h1 class="text-3xl font-bold mb-6">Employee Dashboard</h1>
+<div class="space-y-8">
+    <!-- Employee Header Profile Banner -->
+    <div class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-2xl font-bold font-brand text-blue-300 shadow-inner">
+                    {{ user.username|first|upper }}
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-2xl sm:text-3xl font-bold font-brand">{{ user.full_name_or_username }}</h1>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                            EMPLOYEE
+                        </span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-blue-200 mt-1 flex items-center space-x-2">
+                        <i class="fa-solid fa-building text-blue-300"></i>
+                        <span>Department: <strong>{{ department.name|default:'Unassigned' }}</strong></span>
+                    </p>
+                </div>
+            </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <!-- Available Assets Table -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">Request Assets</h2>
-        <table class="min-w-full table-auto">
-            <thead class="bg-gray-200">
-                <tr>
-                    <th class="px-4 py-2 text-left">Name</th>
-                    <th class="px-4 py-2 text-left">Available</th>
-                    <th class="px-4 py-2 text-left">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for asset in assets %}
-                <tr class="border-b">
-                    <td class="px-4 py-2">{{ asset.name }}</td>
-                    <td class="px-4 py-2 text-green-600 font-bold">{{ asset.available_quantity }}</td>
-                    <td class="px-4 py-2">
-                        {% if asset.available_quantity > 0 %}
-                        <form method="post" action="{% url 'request_asset' asset.id %}" class="flex space-x-2">
-                            {% csrf_token %}
-                            <input type="number" name="quantity" value="1" min="1" max="{{ asset.available_quantity }}" class="border rounded w-16 px-2 py-1">
-                            <button type="submit" class="bg-blue-500 text-white px-2 py-1 rounded">Request</button>
-                        </form>
-                        {% else %}
-                        <span class="text-gray-400">Out of stock</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- My Requests Table -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">My Requests</h2>
-        <table class="min-w-full table-auto">
-            <thead class="bg-gray-200">
-                <tr>
-                    <th class="px-4 py-2 text-left">Asset</th>
-                    <th class="px-4 py-2 text-left">Qty</th>
-                    <th class="px-4 py-2 text-left">Status</th>
-                    <th class="px-4 py-2 text-left">Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for req in my_requests %}
-                <tr class="border-b">
-                    <td class="px-4 py-2">{{ req.asset.name }}</td>
-                    <td class="px-4 py-2">{{ req.quantity }}</td>
-                    <td class="px-4 py-2 font-bold 
-                        {% if req.status == 'APPROVED' %}text-green-600
-                        {% elif req.status == 'REJECTED' %}text-red-600
-                        {% else %}text-yellow-600{% endif %}">
-                        {{ req.status }}
-                    </td>
-                    <td class="px-4 py-2 text-sm text-gray-500">{{ req.request_date|date:"Y-m-d" }}</td>
-                </tr>
+            <!-- Skills List -->
+            <div class="flex flex-wrap gap-1.5 sm:justify-end">
+                {% for skill in user.skills.all %}
+                    <span class="bg-white/10 text-blue-100 text-xs px-2.5 py-1 rounded-lg border border-white/10">
+                        #{{ skill.name }}
+                    </span>
                 {% empty %}
-                <tr>
-                    <td colspan="4" class="px-4 py-2 text-gray-500">No requests made yet.</td>
-                </tr>
+                    <span class="text-xs text-blue-300/80 italic">No skills listed</span>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Tasks & Gamification Section -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-    <!-- My Tasks Table -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">My Tasks & Subtasks</h2>
-        {% for task in my_tasks %}
-        <div class="mb-4 border p-4 rounded {% if task.status == 'COMPLETED' %}bg-green-50{% endif %}">
-            <h3 class="font-bold text-lg">{{ task.title }}</h3>
-            <p class="text-sm text-gray-600 mb-2">Deadline: {{ task.deadline|date:"Y-m-d H:i" }} | Status: <strong>{{ task.status }}</strong></p>
-            <p class="text-sm mb-4">{{ task.description }}</p>
-            
-            <h4 class="font-bold text-md mb-2">Subtasks:</h4>
-            <ul class="list-none space-y-2">
-                {% for subtask in task.subtasks.all %}
-                <li class="flex items-center">
-                    <form method="post" action="{% url 'update_subtask_status' subtask.id %}" class="flex items-center w-full">
-                        {% csrf_token %}
-                        <input type="checkbox" name="is_completed" {% if subtask.is_completed %}checked{% endif %} onChange="this.form.submit()" class="mr-2 h-4 w-4 text-blue-600">
-                        <span class="{% if subtask.is_completed %}line-through text-gray-400{% endif %}">{{ subtask.title }}</span>
-                    </form>
-                </li>
-                {% empty %}
-                <li class="text-gray-500 text-sm">No subtasks for this task.</li>
-                {% endfor %}
-            </ul>
+            </div>
         </div>
-        {% empty %}
-        <p class="text-gray-500">You have no assigned tasks.</p>
-        {% endfor %}
     </div>
 
-    <!-- My Awards -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">My Awards & Badges 🏆</h2>
-        <div class="grid grid-cols-1 gap-4">
-            {% for award in my_awards %}
-            <div class="border border-yellow-400 bg-yellow-50 p-4 rounded text-center shadow-sm">
-                <div class="text-4xl mb-2">⭐</div>
-                <h3 class="font-bold text-yellow-800">{{ award.name }}</h3>
-                <p class="text-sm text-yellow-700 mt-1">{{ award.description }}</p>
-                <p class="text-xs text-yellow-600 mt-2">Awarded on: {{ award.awarded_at|date:"Y-m-d" }}</p>
+    <!-- Quick Stat Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">My Tasks</span>
+                <i class="fa-solid fa-list-check text-cyan-600"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ active_tasks_count }}</div>
+            <span class="text-xs text-cyan-600 font-medium">Pending completion</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Approved Assets</span>
+                <i class="fa-solid fa-boxes-stacked text-emerald-600"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ approved_requests_count }}</div>
+            <span class="text-xs text-emerald-600 font-medium">In my possession</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Badges</span>
+                <i class="fa-solid fa-trophy text-amber-500"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ total_awards_count }}</div>
+            <span class="text-xs text-amber-600 font-medium">Earned recognition</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Issues Raised</span>
+                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">{{ my_reported_maintenance.count|add:my_reported_dept_issues.count }}</div>
+            <span class="text-xs text-rose-600 font-medium">Tickets filed</span>
+        </div>
+    </div>
+
+    <!-- 2-Column: Request Assets & My Requests / Returns -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Request Assets Catalog -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <h2 class="text-lg font-bold text-slate-900">Request Equipment / Assets</h2>
+                </div>
+                <a href="{% url 'asset_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    Full Catalog &rarr;
+                </a>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar flex-grow max-h-[420px]">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-xs">
+                        <tr>
+                            <th class="px-5 py-3">Asset</th>
+                            <th class="px-5 py-3 text-center">Available</th>
+                            <th class="px-5 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for asset in all_assets %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-5 py-3">
+                                <div class="font-medium text-slate-900">{{ asset.name }}</div>
+                                <div class="text-xs text-slate-400">{{ asset.category.name|default:'General' }} &bull; {{ asset.department.name|default:'Shared' }}</div>
+                            </td>
+                            <td class="px-5 py-3 text-center">
+                                <span class="font-bold text-xs {% if asset.available_quantity == 0 %}text-rose-600{% elif asset.is_low_stock %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                                    {{ asset.available_quantity }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-right whitespace-nowrap">
+                                {% if asset.available_quantity > 0 %}
+                                <form method="post" action="{% url 'request_asset' asset.id %}" class="inline-flex items-center space-x-1.5">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="1" min="1" max="{{ asset.available_quantity }}" class="w-14 border border-slate-300 rounded-lg px-2 py-1 text-xs text-center font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm transition">
+                                        Request
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-xs font-semibold text-rose-500 bg-rose-50 px-2 py-1 rounded-lg">Out of Stock</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-5 py-6 text-center text-slate-400 text-xs">
+                                No assets registered in inventory.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- My Requests & Returns Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                    <h2 class="text-lg font-bold text-slate-900">My Requests & Returns</h2>
+                </div>
+                <a href="{% url 'request_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    All My Requests &rarr;
+                </a>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar flex-grow max-h-[420px]">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0 z-10 shadow-xs">
+                        <tr>
+                            <th class="px-5 py-3">Asset</th>
+                            <th class="px-5 py-3 text-center">Qty</th>
+                            <th class="px-5 py-3">Status</th>
+                            <th class="px-5 py-3 text-right">Return / Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for req in my_requests %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="px-5 py-3.5">
+                                <div class="font-medium text-slate-800">{{ req.asset.name }}</div>
+                                <div class="text-[11px] text-slate-400">{{ req.request_date|date:"M d, Y" }}</div>
+                            </td>
+                            <td class="px-5 py-3.5 text-center font-bold text-slate-700">
+                                {{ req.quantity }}
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if req.status == 'APPROVED' %}bg-emerald-100 text-emerald-800{% elif req.status == 'REJECTED' %}bg-rose-100 text-rose-800{% elif req.status == 'RETURNED' %}bg-slate-100 text-slate-700{% else %}bg-amber-100 text-amber-800{% endif %}">
+                                    {{ req.status }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                {% if req.status == 'APPROVED' %}
+                                    <form method="post" action="{% url 'return_asset' req.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm transition">
+                                            <i class="fa-solid fa-arrow-rotate-left mr-1"></i>Return Asset
+                                        </button>
+                                    </form>
+                                {% elif req.status == 'REJECTED' and req.admin_notes %}
+                                    <span class="text-[11px] text-rose-600 italic" title="{{ req.admin_notes }}">{{ req.admin_notes|truncatechars:18 }}</span>
+                                {% elif req.status == 'RETURNED' %}
+                                    <span class="text-[11px] text-slate-400">Returned {{ req.return_date|date:"M d" }}</span>
+                                {% else %}
+                                    <span class="text-[11px] text-slate-400">Awaiting review</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-8 text-center text-slate-400 text-xs">
+                                You haven't made any asset requests yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Tasks and Subtasks Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-list-check mr-2 text-cyan-600"></i>My Assigned Tasks & Subtasks
+                </h2>
+                <p class="text-xs text-slate-500">Check off subtasks as you progress to complete tasks and earn badges.</p>
+            </div>
+            <a href="{% url 'task_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                All My Tasks &rarr;
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for task in my_tasks %}
+            <div class="border border-slate-200 rounded-xl p-5 {% if task.status == 'COMPLETED' %}bg-emerald-50/40 border-emerald-200{% else %}bg-slate-50/50{% endif %} flex flex-col justify-between">
+                <div>
+                    <!-- Task Header -->
+                    <div class="flex items-start justify-between mb-2">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base">{{ task.title }}</h3>
+                            <span class="text-xs font-medium text-slate-500">{{ task.workload_hours }} Workload Hours</span>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if task.status == 'COMPLETED' %}bg-emerald-100 text-emerald-800{% elif task.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800{% else %}bg-slate-200 text-slate-700{% endif %}">
+                            {{ task.status }}
+                        </span>
+                    </div>
+
+                    <!-- Deadline Alert -->
+                    <div class="text-xs mb-3 flex items-center space-x-2">
+                        <i class="fa-regular fa-clock {% if task.is_overdue %}text-rose-600{% else %}text-slate-400{% endif %}"></i>
+                        <span class="font-semibold {% if task.is_overdue %}text-rose-600{% else %}text-slate-600{% endif %}">
+                            Deadline: {{ task.deadline|date:"M d, Y, h:i A" }}
+                            {% if task.is_overdue %}(OVERDUE){% endif %}
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-600 mb-4">{{ task.description }}</p>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1">
+                            <span>Subtask Progress</span>
+                            <span>{{ task.progress_percentage }}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="h-2 rounded-full {% if task.status == 'COMPLETED' %}bg-emerald-500{% else %}bg-blue-600{% endif %}" style="width: {{ task.progress_percentage }}%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Subtasks Checklist -->
+                    <div class="space-y-2 pt-2 border-t border-slate-200">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Checklist:</span>
+                        {% for subtask in task.subtasks.all %}
+                        <form method="post" action="{% url 'update_subtask_status' subtask.id %}" class="flex items-center bg-white p-2.5 rounded-lg border border-slate-200">
+                            {% csrf_token %}
+                            <input type="checkbox" name="is_completed" {% if subtask.is_completed %}checked{% endif %} onchange="this.form.submit()" class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded cursor-pointer mr-3">
+                            <span class="text-xs font-medium {% if subtask.is_completed %}line-through text-slate-400{% else %}text-slate-800{% endif %}">
+                                {{ subtask.title }}
+                            </span>
+                        </form>
+                        {% empty %}
+                        <p class="text-xs text-slate-400 italic">No checklist items for this task.</p>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
             {% empty %}
-            <p class="text-gray-500">You haven't earned any awards yet. Complete tasks on time to earn badges!</p>
+            <div class="col-span-2 text-center py-8 text-slate-400 text-xs">
+                You have no active tasks assigned! Great job!
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Issue Reporting & Department Resolution Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Report Issues Forms Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-wrench mr-2 text-rose-600"></i>Report Issue or Maintenance
+                </h2>
+                <p class="text-xs text-slate-500">Report broken hardware, damaged assets, or issues for other departments.</p>
+            </div>
+
+            <!-- Form 1: Asset Maintenance Report -->
+            <form method="post" action="{% url 'report_issue' %}" class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                {% csrf_token %}
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center">
+                    <i class="fa-solid fa-box-open mr-1.5 text-blue-600"></i>Report Asset Defect / Damage
+                </h3>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Select Asset</label>
+                    <select name="asset_id" required class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">-- Choose Asset --</option>
+                        {% for a in all_assets %}
+                            <option value="{{ a.id }}">{{ a.name }} ({{ a.department.name|default:'General' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Priority</label>
+                        <select name="priority" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM" selected>Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="URGENT">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center pt-5">
+                        <label class="inline-flex items-center text-xs font-semibold text-rose-600 cursor-pointer">
+                            <input type="checkbox" name="is_damaged" class="h-4 w-4 text-rose-600 rounded mr-2 focus:ring-rose-500">
+                            <span>Severely Damaged</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Description of Issue</label>
+                    <textarea name="description" rows="2" required placeholder="Describe damage or malfunction..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold py-2 px-4 rounded-lg shadow-sm transition">
+                    Submit Asset Issue
+                </button>
+            </form>
+
+            <!-- Form 2: Cross-Department Issue -->
+            <form method="post" action="{% url 'create_dept_issue' %}" class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                {% csrf_token %}
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center">
+                    <i class="fa-solid fa-arrows-split-up-and-left mr-1.5 text-indigo-600"></i>Raise Ticket to Another Department
+                </h3>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Target Department</label>
+                    <select name="target_department" required class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">-- Choose Target Department --</option>
+                        {% for d in all_departments %}
+                            {% if d != department %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Title</label>
+                        <input type="text" name="title" required placeholder="Summary of ticket..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Priority</label>
+                        <select name="priority" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM" selected>Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="URGENT">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Description</label>
+                    <textarea name="description" rows="2" required placeholder="Explain requirements or complaint..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-4 rounded-lg shadow-sm transition">
+                    Submit Department Ticket
+                </button>
+            </form>
+        </div>
+
+        <!-- Issues Received by Department -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                            <i class="fa-solid fa-inbox mr-2 text-indigo-600"></i>Issues Received by My Department
+                        </h2>
+                        <p class="text-xs text-slate-500">Tickets assigned to {{ department.name|default:'your unit' }} needing attention.</p>
+                    </div>
+                    <a href="{% url 'issue_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                        View Hub &rarr;
+                    </a>
+                </div>
+
+                <div class="space-y-3 max-h-[550px] overflow-y-auto custom-scrollbar pr-1">
+                    {% for issue in received_dept_issues %}
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                        <div class="flex items-start justify-between">
+                            <h4 class="font-bold text-slate-900 text-sm">{{ issue.title }}</h4>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {% if issue.status == 'RESOLVED' or issue.status == 'CLOSED' %}bg-emerald-100 text-emerald-800{% elif issue.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                                {{ issue.status }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">From: {{ issue.reported_by.username }} &bull; {{ issue.created_at|date:"M d, Y" }}</p>
+                        <p class="text-xs text-slate-700 mt-2 bg-white p-2 rounded border border-slate-200">{{ issue.description }}</p>
+
+                        <!-- Status Update Form -->
+                        <form method="post" action="{% url 'update_dept_issue' issue.id %}" class="mt-3 flex items-center space-x-2">
+                            {% csrf_token %}
+                            <select name="status" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="OPEN" {% if issue.status == 'OPEN' %}selected{% endif %}>Open</option>
+                                <option value="IN_PROGRESS" {% if issue.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                                <option value="RESOLVED" {% if issue.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+                                <option value="CLOSED" {% if issue.status == 'CLOSED' %}selected{% endif %}>Closed</option>
+                            </select>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition">
+                                Update Status
+                            </button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <p class="text-center py-8 text-slate-400 text-xs">No pending cross-department issues assigned to your team.</p>
+                    {% endfor %}
+
+                    <!-- Received Maintenance Issues -->
+                    {% for m_issue in received_maintenance_issues %}
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                        <div class="flex items-start justify-between">
+                            <h4 class="font-bold text-slate-900 text-sm">Asset Issue: {{ m_issue.asset.name }}</h4>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {% if m_issue.status == 'RESOLVED' %}bg-emerald-100 text-emerald-800{% elif m_issue.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                                {{ m_issue.status }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Reported by: {{ m_issue.reported_by.username }} &bull; {{ m_issue.reported_at|date:"M d, Y" }}</p>
+                        <p class="text-xs text-slate-700 mt-2 bg-white p-2 rounded border border-slate-200">{{ m_issue.description }}</p>
+
+                        <!-- Maintenance status form -->
+                        <form method="post" action="{% url 'update_maintenance_issue' m_issue.id %}" class="mt-3 flex items-center space-x-2">
+                            {% csrf_token %}
+                            <select name="status" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="REPORTED" {% if m_issue.status == 'REPORTED' %}selected{% endif %}>Reported</option>
+                                <option value="IN_PROGRESS" {% if m_issue.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                                <option value="RESOLVED" {% if m_issue.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+                            </select>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition">
+                                Update
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gamification / My Badges & Awards Showcase -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-trophy mr-2 text-amber-500"></i>My Badges & Achievement Awards
+                </h2>
+                <p class="text-xs text-slate-500">Complete tasks on time and maintain inventory safely to unlock badges.</p>
+            </div>
+            <a href="{% url 'award_list' %}" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                Company Leaderboard &rarr;
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {% for award in my_awards %}
+            <div class="p-4 rounded-xl border border-amber-200 bg-gradient-to-b from-amber-50/50 to-amber-100/30 text-center shadow-xs">
+                <div class="text-3xl mb-1">{{ award.badge_icon }}</div>
+                <h3 class="font-bold text-amber-900 text-sm">{{ award.name }}</h3>
+                <p class="text-xs text-amber-700 mt-1 line-clamp-2">{{ award.description }}</p>
+                <span class="text-[10px] text-amber-600 block mt-2 font-medium">{{ award.awarded_at|date:"M d, Y" }}</span>
+            </div>
+            {% empty %}
+            <div class="col-span-4 text-center py-8 text-slate-400 text-xs">
+                <i class="fa-solid fa-award text-3xl text-amber-300 mb-2 block"></i>
+                You haven't earned badges yet. Complete assigned tasks before deadline to automatically earn awards!
+            </div>
             {% endfor %}
         </div>
     </div>
